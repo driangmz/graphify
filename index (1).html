@@ -1,0 +1,1310 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Dynamic Graph Calculator: PIN Authentication</title>
+    <!-- Google Font: Poppins -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        /* --- CSS Variables for Default (Light) Theme --- */
+        :root {
+            --primary-color: #536dfe; /* Deep Sky Blue - a vibrant blue */
+            --primary-light: #8c9eff;
+            --primary-dark: #304ffe;
+            --accent-color: #00e676; /* Green Accent */
+            --accent-dark: #00c853;
+
+            --text-dark: #212121;
+            --text-light: #424242;
+            --text-muted: #757575;
+
+            --bg-body: linear-gradient(135deg, #e0f2f7 0%, #fce4ec 100%); /* Light Blue to Light Pink */
+            --bg-card: #ffffff; /* Main container background */
+            --bg-field: #f5f5f5; /* Fieldset/instruction section background */
+            --bg-canvas: #ffffff; /* Explicit background for the canvas itself */
+            --bg-button: #ffffff; /* Theme toggle button background */
+
+            --border-color: #e0e0e0;
+            --grid-major-color: #e0e0e0; /* Major grid lines */
+            --grid-minor-color: #f0f0f0; /* Minor grid lines */
+
+            --shadow-light: rgba(0, 0, 0, 0.05);
+            --shadow-medium: rgba(0, 0, 0, 0.1);
+            --shadow-strong: rgba(0, 0, 0, 0.15);
+            --focus-glow: rgba(83, 109, 254, 0.2); /* Primary color with transparency */
+            
+            --theme-icon-color: var(--text-dark); /* Color for icons in the theme button */
+
+            /* Default graph element colors (can be overridden by user input) */
+            --default-point-color: var(--primary-color);
+            --default-line-color: var(--text-dark);
+        }
+        
+        /* --- CSS Variables for Dark Theme (Now much darker, closer to black) --- */
+        html.dark {
+            --primary-color: #bbdefb; /* Lighter primary for contrast on dark */
+            --primary-light: #e3f2fd;
+            --primary-dark: #90caf9;
+            --accent-color: #a5d6a7; /* Lighter accent */
+            --accent-dark: #66bb6a;
+
+            --text-dark: #e0e0e0; /* Light text on dark bg */
+            --text-light: #bdbdbd;
+            --text-muted: #9e9e9e;
+
+            --bg-body: #0a0a0a; /* Almost black */
+            --bg-card: #1c1c1c; /* Very dark grey */
+            --bg-field: #222222; /* Slightly less dark for fields */
+            --bg-canvas: #000000; /* Black canvas background */
+            --bg-button: #2a2a2a; /* Dark button background */
+
+            --border-color: #424242; /* Subtler border color */
+            --grid-major-color: #383838; /* Dark grid lines */
+            --grid-minor-color: #2b2b2b; /* Even darker minor grid lines */
+
+            --shadow-light: rgba(255, 255, 255, 0.05);
+            --shadow-medium: rgba(255, 255, 255, 0.1);
+            --shadow-strong: rgba(255, 255, 255, 0.15);
+            --focus-glow: rgba(187, 222, 251, 0.3); /* Lighter primary color with transparency */
+
+            --theme-icon-color: var(--text-dark);
+
+            --default-point-color: var(--primary-light);
+            --default-line-color: var(--text-dark);
+        }
+
+        /* Define a custom animation for the icon rotation */
+        @keyframes rotate-right {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        @keyframes rotate-left {
+            from { transform: rotate(360deg); }
+            to { transform: rotate(0deg); }
+        }
+
+        .rotate-icon-right {
+            animation: rotate-right 0.5s ease-in-out forwards;
+        }
+
+        .rotate-icon-left {
+            animation: rotate-left 0.5s ease-in-out forwards;
+        }
+        
+        @keyframes slideIn {
+            from { transform: translateX(100%); }
+            to { transform: translateX(0); }
+        }
+        @keyframes slideOut {
+            from { transform: translateX(0); }
+            to { transform: translateX(100%); }
+        }
+        .slide-in {
+            animation: slideIn 0.3s ease-out forwards;
+        }
+        .slide-out {
+            animation: slideOut 0.3s ease-in forwards;
+        }
+
+        /* Generic styles using variables */
+        body {
+            font-family: 'Poppins', sans-serif;
+            padding: 40px 20px;
+            background: var(--bg-body);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            color: var(--text-dark); /* All text uses this */
+            margin: 0;
+            overflow-x: hidden;
+            line-height: 1.6;
+            transition: background 0.5s ease, color 0.5s ease; /* Smooth transition for color too */
+        }
+        
+        .page-container {
+            width: 100%;
+            max-width: 1000px;
+        }
+
+        h1 {
+            color: var(--primary-dark);
+            text-align: center;
+            margin-bottom: 40px;
+            font-size: 3em;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+            text-shadow: 2px 2px 4px var(--shadow-light);
+            transition: color 0.5s ease;
+        }
+
+        .container {
+            width: 100%;
+            background-color: var(--bg-card);
+            border-radius: 16px;
+            box-shadow: 0 12px 24px var(--shadow-medium), 0 4px 8px var(--shadow-light);
+            padding: 40px;
+            margin-bottom: 40px;
+            box-sizing: border-box;
+            border: 1px solid var(--border-color);
+            transition: background-color 0.5s ease, border-color 0.5s ease, box-shadow 0.5s ease;
+        }
+        
+        /* Login Page Styles */
+        #loginPage {
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+        }
+        
+        .auth-form {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .auth-form input[type="text"] {
+            padding: 12px 15px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 1em;
+            background-color: var(--bg-field);
+            color: var(--text-dark);
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        .auth-form input:focus {
+            border-color: var(--primary-color);
+            outline: none;
+            box-shadow: 0 0 0 4px var(--focus-glow);
+        }
+        
+        .auth-button {
+            padding: 12px;
+            border-radius: 8px;
+            border: none;
+            background-color: var(--primary-color);
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+        }
+        
+        .auth-button:hover {
+            background-color: var(--primary-dark);
+            transform: translateY(-2px);
+        }
+
+        .auth-toggle {
+            margin-top: 15px;
+            font-size: 0.9em;
+            color: var(--text-muted);
+        }
+        
+        .auth-toggle button {
+            background: none;
+            border: none;
+            color: var(--primary-color);
+            cursor: pointer;
+            font-weight: 500;
+            padding: 0;
+            text-decoration: underline;
+        }
+        
+        /* Main Calculator Page Styles */
+        #calculatorPage {
+            display: none; /* Initially hidden */
+        }
+        
+        .instruction-section {
+            background-color: var(--bg-field);
+            border-radius: 12px;
+            padding: 25px 30px;
+            margin-bottom: 30px;
+            box-shadow: inset 0 2px 6px var(--shadow-light);
+            border: 1px solid var(--border-color);
+            color: var(--text-dark);
+            font-size: 0.95em;
+            line-height: 1.6;
+            transition: background-color 0.5s ease, border-color 0.5s ease, box-shadow 0.5s ease;
+        }
+        
+        .instruction-section h2 {
+            color: var(--primary-dark);
+            font-size: 1.8em;
+            margin-top: 0;
+            margin-bottom: 20px;
+            font-weight: 600;
+        }
+        
+        .controls-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        fieldset {
+            border: none;
+            border-radius: 12px;
+            padding: 25px;
+            background-color: var(--bg-field);
+            box-shadow: inset 0 2px 6px var(--shadow-light);
+            transition: all 0.3s ease-out;
+            border: 1px solid var(--border-color);
+        }
+        
+        legend {
+            font-weight: 600;
+            color: var(--primary-color);
+            padding: 0 15px;
+            font-size: 1.2em;
+            margin-bottom: 15px;
+            background-color: var(--bg-field);
+            border-radius: 8px;
+            position: relative;
+            left: -15px;
+            top: -10px;
+            transition: color 0.5s ease, background-color 0.5s ease;
+        }
+        
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            margin-bottom: 15px;
+        }
+        
+        .control-group label {
+            margin-bottom: 8px;
+            font-size: 0.9em;
+            color: var(--text-light);
+            font-weight: 500;
+            transition: color 0.5s ease;
+        }
+        
+        input[type="number"], input[type="text"], input[type="color"], select, textarea {
+            padding: 12px 15px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 1em;
+            width: 100%;
+            box-sizing: border-box;
+            background-color: var(--bg-card); /* Inputs use card background */
+            color: var(--text-dark);
+            transition: border-color 0.3s ease, box-shadow 0.3s ease, background-color 0.3s ease, color 0.3s ease;
+            box-shadow: inset 0 1px 3px var(--shadow-light);
+        }
+
+        input[type="color"] { height: 44px; padding: 5px; }
+
+        .live-status {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-top: 20px;
+            padding: 10px 15px;
+            border-radius: 50px;
+            background-color: var(--accent-color);
+            box-shadow: 0 2px 4px var(--shadow-light);
+            font-size: 0.9em;
+            color: white; /* Always white for visibility on accent color */
+            width: fit-content;
+            margin-left: auto;
+            margin-right: auto;
+            gap: 10px;
+            transition: background-color 0.5s ease, box-shadow 0.5s ease;
+        }
+        
+        .canvas-container {
+            width: 100%;
+            max-width: 900px;
+            margin: 0 auto;
+            aspect-ratio: 7 / 4; /* Maintain a 7:4 aspect ratio for the canvas */
+            position: relative;
+        }
+
+        canvas {
+            border: 1px solid var(--border-color);
+            background-color: var(--bg-canvas); /* Canvas uses its own background variable */
+            border-radius: 12px;
+            box-shadow: 0 8px 16px var(--shadow-medium), 0 2px 4px var(--shadow-light);
+            display: block;
+            width: 100%;
+            height: 100%;
+            transition: background-color 0.5s ease, border-color 0.5s ease, box-shadow 0.5s ease;
+        }
+        
+        hr {
+            border: none;
+            border-top: 2px dashed var(--border-color);
+            margin: 50px 0;
+            width: 100%;
+            max-width: 900px;
+            transition: border-color 0.5s ease;
+        }
+
+        .calculation-results {
+            margin-top: 15px;
+            font-size: 0.9em;
+            line-height: 1.4;
+            color: var(--text-dark);
+            background-color: var(--bg-card);
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            box-shadow: inset 0 1px 3px var(--shadow-light);
+            transition: background-color 0.5s ease, border-color 0.5s ease, color 0.5s ease, box-shadow 0.5s ease;
+        }
+        
+        /* --- Buttons --- */
+        #theme-toggle, #settings-button, #logout-button {
+            position: fixed;
+            top: 20px;
+            z-index: 100;
+            padding: 12px;
+            border-radius: 50%;
+            background-color: var(--bg-button);
+            color: var(--theme-icon-color);
+            box-shadow: 0 4px 8px var(--shadow-medium);
+            transform: scale(1);
+            transition: all 0.3s ease;
+            cursor: pointer;
+            border: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        #theme-toggle:hover, #settings-button:hover, #logout-button:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 12px var(--shadow-strong);
+        }
+        #theme-toggle:focus, #settings-button:focus, #logout-button:focus {
+            outline: none;
+            box-shadow: 0 0 0 4px var(--focus-glow);
+        }
+        
+        #theme-toggle svg, #settings-button svg {
+            width: 24px;
+            height: 24px;
+            stroke-width: 2;
+            transition: color 0.5s ease;
+        }
+        
+        #logout-button {
+            right: 20px;
+            padding: 12px 18px;
+            border-radius: 8px;
+            font-weight: 500;
+            font-size: 0.9em;
+            color: white;
+            background-color: #d32f2f;
+            border: none;
+        }
+        
+        #settings-button { right: 120px; }
+        
+        /* --- Settings Panel Styles --- */
+        #settingsPanel {
+            position: fixed;
+            top: 0;
+            right: 0;
+            height: 100vh;
+            width: 100%;
+            max-width: 400px;
+            background-color: var(--bg-card);
+            box-shadow: -4px 0 16px var(--shadow-strong);
+            overflow-y: auto;
+            transform: translateX(100%);
+            transition: background-color 0.3s ease, border-color 0.3s ease;
+            z-index: 200;
+        }
+        
+        #settingsPanel.is-visible { transform: translateX(0); }
+        
+        .settings-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .settings-header h2 { margin: 0; color: var(--primary-dark); font-size: 1.5em; }
+        
+        .close-button {
+            border: none;
+            background: none;
+            cursor: pointer;
+            color: var(--text-muted);
+            transition: color 0.2s ease;
+        }
+        
+        .close-button:hover { color: var(--primary-color); }
+        
+        .settings-content { padding: 20px; }
+        .settings-category { margin-bottom: 25px; }
+
+        .settings-category h3 {
+            font-size: 1.1em;
+            font-weight: 600;
+            color: var(--text-muted);
+            margin-bottom: 15px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .settings-list li {
+            padding: 15px;
+            background-color: var(--bg-field);
+            border-radius: 8px;
+            box-shadow: inset 0 1px 3px var(--shadow-light);
+            border: 1px solid var(--border-color);
+            transition: background-color 0.3s ease;
+        }
+        
+        .settings-list .setting-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: var(--text-dark);
+        }
+        
+        .settings-list .setting-item .setting-name { font-weight: 500; }
+        .settings-list .setting-item .setting-action {
+            color: var(--primary-color);
+            cursor: pointer;
+            text-decoration: none;
+            font-size: 0.9em;
+            transition: color 0.2s ease;
+        }
+        .settings-list .setting-item .setting-action:hover { text-decoration: underline; }
+        
+        .settings-list .setting-description {
+            font-size: 0.85em;
+            color: var(--text-muted);
+            margin-top: 5px;
+            line-height: 1.4;
+        }
+        
+        /* Modal for creating a new PIN */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.6);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        
+        .modal-content {
+            background-color: var(--bg-card);
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 8px 16px var(--shadow-strong);
+            max-width: 400px;
+            text-align: center;
+            border: 1px solid var(--border-color);
+        }
+        
+        .modal-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .modal-buttons button {
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: 500;
+            cursor: pointer;
+        }
+        
+        .modal-confirm {
+            background-color: #d32f2f;
+            color: white;
+            border: none;
+        }
+        
+        .modal-cancel {
+            background-color: var(--bg-field);
+            color: var(--text-dark);
+            border: 1px solid var(--border-color);
+        }
+
+        /* Responsive Adjustments */
+        @media (max-width: 768px) {
+            body { padding: 20px; }
+            h1 { font-size: 2em; margin-bottom: 30px; }
+            .container { padding: 25px; margin-bottom: 30px; }
+            .controls-grid { grid-template-columns: 1fr; gap: 20px; }
+            fieldset { padding: 20px; }
+            legend { font-size: 1.1em; margin-bottom: 10px; }
+            #theme-toggle { top: 10px; right: 10px; padding: 10px; }
+            #settings-button { top: 10px; right: 60px; padding: 10px; }
+            #settingsPanel { max-width: 100%; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Main application content -->
+    <div id="app" class="page-container">
+        
+        <!-- Login Page -->
+        <div id="loginPage">
+            <h1>Access Your Graph Calculator</h1>
+            <div class="container">
+                <div id="auth-message" class="text-red-500 mb-4"></div>
+                <form id="pin-login-form" class="auth-form">
+                    <label for="pin-input">Enter your 4-digit PIN:</label>
+                    <input type="text" id="pin-input" placeholder="4-digit PIN" maxlength="4" pattern="\d{4}" required>
+                    <button type="submit" id="pin-login-button" class="auth-button">Sign In</button>
+                </form>
+                <div class="auth-toggle">
+                    <span>Don't have an account?</span>
+                    <button id="auth-toggle-button">Create a New Account</button>
+                </div>
+            </div>
+            
+            <!-- Modal for creating a PIN -->
+            <div id="createAccountModal" class="modal">
+                <div class="modal-content">
+                    <p>Create your new account with a 4-digit PIN.</p>
+                    <input type="text" id="new-pin-input" placeholder="New 4-digit PIN" maxlength="4" pattern="\d{4}" class="mt-4 w-full p-2 border rounded">
+                    <div class="modal-buttons">
+                        <button id="confirmPins" class="auth-button">Create Account</button>
+                        <button id="cancelPins" class="modal-cancel">Cancel</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Calculator Page (Hidden until logged in) -->
+        <div id="calculatorPage">
+            <h1>Dynamic Graph Calculator</h1>
+
+            <!-- Theme Toggle & Settings Buttons -->
+            <button id="theme-toggle">
+                <svg id="sun-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="display: none;"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
+                <svg id="moon-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="display: block;"><path stroke-linecap="round" stroke-linejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" /></svg>
+            </button>
+            <button id="settings-button">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-settings">
+                    <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.08a2 2 0 0 1 1 1.73v.5a2 2 0 0 1-1 1.73l-.15.08a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.73v-.5a2 2 0 0 1 1-1.73l.15-.08a2 2 0 0 0 .73-2.73l-.22-.39a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" />
+                    <circle cx="12" cy="12" r="3" />
+                </svg>
+            </button>
+            <button id="logout-button">Logout</button>
+            
+            <!-- Settings Panel (Initially hidden, slides in from the right) -->
+            <div id="settingsPanel" class="transform translate-x-full">
+                <div class="settings-header">
+                    <h2>Settings</h2>
+                    <button id="closeSettings" class="close-button">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+                <div class="settings-content">
+                    <div class="settings-category">
+                        <h3>Saved Graphs</h3>
+                        <div class="control-group">
+                            <label for="graphNameInput">Save Graph Name:</label>
+                            <input type="text" id="graphNameInput" placeholder="My awesome graph" />
+                            <button id="saveGraphBtn" class="auth-button mt-3">Save Graph</button>
+                        </div>
+                        <div class="control-group">
+                            <label>Your Saved Graphs:</label>
+                            <ul id="savedGraphsList" class="settings-list">
+                                <li class="text-sm text-gray-500">No saved graphs found.</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="settings-category">
+                        <h3>Account Info</h3>
+                        <ul class="settings-list">
+                            <li>
+                                <div class="setting-item">
+                                    <span class="setting-name">Your 4-digit PIN:</span>
+                                    <span id="pinDisplay" class="setting-action">Loading...</span>
+                                </div>
+                                <p class="setting-description">This PIN is saved locally on your browser.</p>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="container">
+                <div class="instruction-section">
+                    <h2>How to Use This Graph Calculator</h2>
+                    <p>Welcome! This interactive tool helps you visualize and analyze custom data points on a graph. All changes you make update instantly. There are no 'Draw' or 'Refresh' buttons – just input your data and adjust settings to see your graph and calculations come to life.</p>
+                </div>
+
+                <div class="controls-grid">
+                    <fieldset>
+                        <legend>Data Input</legend>
+                        <div class="control-group">
+                            <label for="graphData">Enter Base Data Points (x,y per line):</label>
+                            <textarea id="graphData" class="data-input" placeholder="Example:&#10;0,0&#10;2,100&#10;4,200&#10;6,150&#10;8,50&#10;10,0"></textarea>
+                        </div>
+                    </fieldset>
+
+                    <fieldset>
+                        <legend>Graph Type</legend>
+                        <div class="control-group">
+                            <label for="graphType">Select Type:</label>
+                            <select id="graphType">
+                                <option value="distance-time">Distance-Time Graph</option>
+                                <option value="velocity-time">Velocity-Time Graph</option>
+                            </select>
+                        </div>
+                    </fieldset>
+
+                    <fieldset>
+                        <legend>Axis & Grid Settings</legend>
+                        <div class="control-group">
+                            <label for="xMax">X Max:</label>
+                            <input type="number" id="xMax" value="12" min="1">
+                        </div>
+                        <div class="control-group">
+                            <label for="yMax">Y Max:</label>
+                            <input type="number" id="yMax" value="250" min="1">
+                        </div>
+                        <div class="control-group">
+                            <label for="xLabel">X Axis Label:</label>
+                            <input type="text" id="xLabel" value="Time (s)">
+                        </div>
+                        <div class="control-group">
+                            <label for="yLabel">Y Axis Label:</label>
+                            <input type="text" id="yLabel" value="Value (Units)">
+                        </div>
+                        <div class="control-group">
+                            <label for="xStep">X Grid Step:</label>
+                            <input type="number" id="xStep" value="2" min="1">
+                        </div>
+                        <div class="control-group">
+                            <label for="yStep">Y Grid Step:</label>
+                            <input type="number" id="yStep" value="50" min="1">
+                        </div>
+                    </fieldset>
+
+                    <fieldset>
+                        <legend>Appearance & Live Settings</legend>
+                        <div class="control-group">
+                            <label for="pointColor">Point Color:</label>
+                            <input type="color" id="pointColor" value="#536DFE">
+                        </div>
+                        <div class="control-group">
+                            <label for="lineColor">Line Color:</label>
+                            <input type="color" id="lineColor" value="#000000">
+                        </div>
+                        <div class="control-group">
+                            <label for="simMagnitude">Live Fluctuation Magnitude:</label>
+                            <input type="number" id="simMagnitude" value="0" min="0" step="0.1">
+                        </div>
+                        <div class="live-status">
+                            <span id="liveDot" class="live-dot"></span>
+                            <span id="liveStatusText">Live Data Stream Active</span>
+                        </div>
+                    </fieldset>
+
+                    <fieldset style="grid-column: 1 / -1;">
+                        <legend>Graph Analysis & Calculations</legend>
+                        <div id="calculationResults" class="calculation-results">
+                            <p>Enter data and select graph type to see calculations.</p>
+                        </div>
+                    </fieldset>
+                </div>
+            </div>
+
+            <hr>
+            
+            <div class="canvas-container">
+                <canvas id="userGraphCanvas"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Global variables for live simulation
+        let liveDataInterval;
+        let currentSimulatedData = [];
+        let debouncedRenderTimeout;
+        let isResizing = false;
+        const LIVE_STREAM_INTERVAL_MS = 80;
+        const INPUT_DEBOUNCE_DELAY_MS = 300;
+
+        // Global UI elements
+        const html = document.documentElement;
+        const loginPage = document.getElementById('loginPage');
+        const calculatorPage = document.getElementById('calculatorPage');
+        const pinLoginForm = document.getElementById('pin-login-form');
+        const pinInput = document.getElementById('pin-input');
+        const authMessage = document.getElementById('auth-message');
+        const authToggleButton = document.getElementById('auth-toggle-button');
+        const logoutButton = document.getElementById('logout-button');
+        const themeToggle = document.getElementById('theme-toggle');
+        const sunIcon = document.getElementById('sun-icon');
+        const moonIcon = document.getElementById('moon-icon');
+        const settingsButton = document.getElementById('settings-button');
+        const settingsPanel = document.getElementById('settingsPanel');
+        const closeSettingsButton = document.getElementById('closeSettings');
+        const savedGraphsList = document.getElementById('savedGraphsList');
+        const saveGraphBtn = document.getElementById('saveGraphBtn');
+        const graphNameInput = document.getElementById('graphNameInput');
+        const pinDisplay = document.getElementById('pinDisplay');
+        const createAccountModal = document.getElementById('createAccountModal');
+        const newPinInput = document.getElementById('new-pin-input');
+        const confirmPinsBtn = document.getElementById('confirmPins');
+        const cancelPinsBtn = document.getElementById('cancelPins');
+        let currentPin = null;
+
+        /* --- Utility Functions --- */
+
+        window.setTheme = function(isDarkMode) {
+            if (isDarkMode) {
+                html.classList.add('dark');
+                html.classList.remove('light');
+                sunIcon.style.display = 'block';
+                moonIcon.style.display = 'none';
+            } else {
+                html.classList.remove('dark');
+                html.classList.add('light');
+                sunIcon.style.display = 'none';
+                moonIcon.style.display = 'block';
+            }
+        };
+        
+        window.animateIcon = function(iconElement, animationClass) {
+            iconElement.classList.remove('rotate-icon-left', 'rotate-icon-right');
+            void iconElement.offsetWidth;
+            iconElement.classList.add(animationClass);
+        };
+
+        window.drawAdvancedGrid = function(ctx, width, height, xMax, yMax, xLabel, yLabel, xStep, yStep) {
+            ctx.clearRect(0, 0, width, height);
+            ctx.font = "13px 'Poppins', sans-serif";
+            
+            const rootStyle = getComputedStyle(document.documentElement);
+            const textColor = rootStyle.getPropertyValue('--text-dark').trim();
+            const gridMajorColor = rootStyle.getPropertyValue('--grid-major-color').trim();
+            const gridMinorColor = rootStyle.getPropertyValue('--grid-minor-color').trim();
+
+            ctx.fillStyle = textColor;
+            ctx.textBaseline = 'middle';
+
+            const margin = 60;
+            const graphWidth = width - margin * 2;
+            const graphHeight = height - margin * 2;
+            const zeroYPx = height - margin;
+
+            xStep = Math.max(0.1, xStep);
+            yStep = Math.max(0.1, yStep);
+
+            ctx.strokeStyle = gridMinorColor; ctx.lineWidth = 0.5;
+            const xMinorStep = xStep / 5; const yMinorStep = yStep / 5;
+            for (let x = 0; x <= xMax; x = parseFloat((x + xMinorStep).toFixed(5))) {
+                if (Math.abs(x % xStep) > 0.001) { let px = margin + (x / xMax) * graphWidth; ctx.beginPath(); ctx.moveTo(px, margin); ctx.lineTo(px, height - margin); ctx.stroke(); }
+            }
+            for (let y = 0; y <= yMax; y = parseFloat((y + yMinorStep).toFixed(5))) {
+                if (Math.abs(y % yStep) > 0.001) { let py = height - margin - (y / yMax) * graphHeight; ctx.beginPath(); ctx.moveTo(margin, py); ctx.lineTo(width - margin, py); ctx.stroke(); }
+            }
+
+            ctx.strokeStyle = gridMajorColor; ctx.lineWidth = 1;
+            for (let x = 0; x <= xMax; x = parseFloat((x + xStep).toFixed(5))) {
+                let px = margin + (x / xMax) * graphWidth; ctx.beginPath(); ctx.moveTo(px, margin); ctx.lineTo(px, height - margin); ctx.stroke();
+                ctx.fillText(x.toFixed(xStep < 1 ? 1 : 0), px - (ctx.measureText(x.toFixed(xStep < 1 ? 1 : 0)).width / 2), height - margin + 20);
+            }
+            for (let y = 0; y <= yMax; y = parseFloat((y + yStep).toFixed(5))) {
+                let py = height - margin - (y / yMax) * graphHeight; ctx.beginPath(); ctx.moveTo(margin, py); ctx.lineTo(width - margin, py); ctx.stroke();
+                ctx.fillText(y.toFixed(yStep < 1 ? 1 : 0), margin - 45, py);
+            }
+
+            ctx.strokeStyle = textColor; ctx.lineWidth = 2;
+            ctx.beginPath(); ctx.moveTo(margin, margin); ctx.lineTo(margin, height - margin); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(margin, zeroYPx); ctx.lineTo(width - margin, zeroYPx); ctx.stroke();
+            const arrowSize = 8;
+            ctx.beginPath(); ctx.moveTo(width - margin, zeroYPx); ctx.lineTo(width - margin - arrowSize, zeroYPx - arrowSize / 2); ctx.lineTo(width - margin - arrowSize, zeroYPx + arrowSize / 2); ctx.closePath(); ctx.fill();
+            ctx.beginPath(); ctx.moveTo(margin, margin); ctx.lineTo(margin - arrowSize / 2, margin + arrowSize); ctx.lineTo(margin + arrowSize / 2, margin + arrowSize); ctx.closePath(); ctx.fill();
+            ctx.fillText(xLabel, width / 2 - (ctx.measureText(xLabel).width / 2), height - 10); ctx.save(); ctx.translate(20, height / 2); ctx.rotate(-Math.PI / 2);
+            ctx.fillText(yLabel, 0 - (ctx.measureText(yLabel).width / 2), 0); ctx.restore();
+            ctx.fillStyle = textColor; ctx.beginPath(); ctx.arc(margin, zeroYPx, 4, 0, 2 * Math.PI); ctx.fill();
+        };
+
+        window.plotGraphData = function(ctx, data, pointColor, lineColor, xMax, yMax) {
+            const margin = 60;
+            const graphWidth = ctx.canvas.width - margin * 2;
+            const graphHeight = ctx.canvas.height - margin * 2;
+
+            if (data.length === 0) return;
+
+            ctx.strokeStyle = lineColor; ctx.lineWidth = 3; ctx.beginPath();
+            let [x0, y0] = data[0];
+            let px0 = margin + (Math.min(Math.max(x0, 0), xMax) / xMax) * graphWidth;
+            let py0 = ctx.canvas.height - margin - (Math.min(Math.max(y0, 0), yMax) / yMax) * graphHeight;
+            ctx.moveTo(px0, py0);
+
+            for (let i = 1; i < data.length; i++) {
+                let [x, y] = data[i];
+                const clampedX = Math.min(Math.max(x, 0), xMax);
+                const clampedY = Math.min(Math.max(y, 0), yMax);
+                let px = margin + (clampedX / xMax) * graphWidth;
+                let py = ctx.canvas.height - margin - (clampedY / yMax) * graphHeight;
+                ctx.lineTo(px, py);
+            }
+            ctx.stroke();
+
+            ctx.fillStyle = pointColor;
+            for (let i = 0; i < data.length; i++) {
+                let [x, y] = data[i];
+                const clampedX = Math.min(Math.max(x, 0), xMax);
+                const clampedY = Math.min(Math.max(y, 0), yMax);
+                let px = margin + (clampedX / xMax) * graphWidth;
+                let py = ctx.canvas.height - margin - (clampedY / yMax) * graphHeight;
+                ctx.beginPath(); ctx.arc(px, py, 5, 0, 2 * Math.PI); ctx.fill();
+            }
+            ctx.lineWidth = 1;
+        };
+
+        window.parseUserData = function(dataString) {
+            const lines = dataString.trim().split('\n');
+            const parsedData = [];
+            const errors = [];
+            let lastX = -Infinity;
+
+            for (let i = 0; i < lines.length; i++) {
+                const line = lines[i].trim();
+                if (line === '') continue;
+
+                const parts = line.split(',').map(s => Number(s.trim()));
+                if (parts.length !== 2 || isNaN(parts[0]) || isNaN(parts[1])) {
+                    errors.push(`Line ${i + 1}: "${line}" is not in X,Y format.`);
+                    continue;
+                }
+                const [x, y] = parts;
+                if (x < 0 || y < 0) {
+                    errors.push(`Line ${i + 1}: Data points must be non-negative (X: ${x}, Y: ${y}).`);
+                }
+                if (x < lastX) {
+                    errors.push(`Line ${i + 1}: X-value (${x}) is less than the previous X-value. Data will be re-sorted.`);
+                }
+                lastX = x;
+                parsedData.push(parts);
+            }
+            parsedData.sort((a, b) => a[0] - b[0]);
+            return { data: parsedData, errors: errors };
+        };
+
+        window.calculateGraphMetrics = function(data, graphType) {
+            const results = [];
+            const errors = [];
+            if (data.length < 2) {
+                results.push(data.length === 1 ? "Only one data point entered. Cannot calculate segments or total motion." : "No data entered.");
+                return { results: results, errors: errors };
+            }
+            if (graphType === 'velocity-time') {
+                let totalDisplacement = 0;
+                const accelerations = [];
+                for (let i = 0; i < data.length - 1; i++) {
+                    const [t1, v1] = data[i]; const [t2, v2] = data[i+1];
+                    if (t2 <= t1) { errors.push(`Time must increase. Segment from (${t1}, ${v1}) to (${t2}, ${v2}) has non-increasing time.`); continue; }
+                    totalDisplacement += 0.5 * (v1 + v2) * (t2 - t1);
+                    accelerations.push(`Segment ${i+1} (Time ${t1}s to ${t2}s): Acceleration = ${((v2 - v1) / (t2 - t1)).toFixed(2)} m/s²`);
+                }
+                results.push(`<strong>Graph Type: Velocity-Time</strong>`);
+                results.push(`Total Displacement: <span class="value">${totalDisplacement.toFixed(2)} m</span>`);
+                if (accelerations.length > 0) { results.push(`Acceleration per segment:`); accelerations.forEach(accel => results.push(`- ${accel}`)); }
+            } else if (graphType === 'distance-time') {
+                const velocities = [];
+                let totalDistance = data[data.length - 1][1] - data[0][1];
+                let totalTime = data[data.length - 1][0] - data[0][0];
+                if (totalTime <= 0 && data.length > 1) { errors.push("Total time elapsed is zero or negative. Cannot calculate average velocities.");
+                } else if (totalTime > 0) { results.push(`Overall Average Velocity: <span class="value">${(totalDistance / totalTime).toFixed(2)} m/s</span>`); }
+                for (let i = 0; i < data.length - 1; i++) {
+                    const [t1, d1] = data[i]; const [t2, d2] = data[i+1];
+                    if (t2 <= t1) { errors.push(`Time must increase. Segment from (${t1}, ${d1}) to (${t2}, ${d2}) has non-increasing time.`); continue; }
+                    velocities.push(`Segment ${i+1} (Time ${t1}s to ${t2}s): Velocity = ${((d2 - d1) / (t2 - t1)).toFixed(2)} m/s`);
+                }
+                results.push(`<strong>Graph Type: Distance-Time</strong>`);
+                if (velocities.length > 0) { results.push(`Velocity per segment:`); velocities.forEach(vel => results.push(`- ${vel}`)); }
+            }
+            return { results: results, errors: errors };
+        };
+
+        window.simulateLiveData = function() {
+            if (isResizing) return;
+            const simMagnitude = parseFloat(document.getElementById('simMagnitude').value) || 0;
+            const yMax = parseFloat(document.getElementById("yMax").value);
+
+            if (simMagnitude > 0 && currentSimulatedData.length > 0) {
+                currentSimulatedData = currentSimulatedData.map(([x, y]) => {
+                    let newY = y + (Math.random() - 0.5) * simMagnitude;
+                    newY = Math.max(0, Math.min(newY, yMax));
+                    return [x, newY];
+                });
+            }
+            window.renderGraph(currentSimulatedData);
+        };
+
+        window.renderGraph = function(dataToPlot = null) {
+            const canvas = document.getElementById("userGraphCanvas");
+            const ctx = canvas.getContext("2d");
+
+            if (!canvas) return;
+
+            const dataString = document.getElementById("graphData").value;
+            const xMax = parseFloat(document.getElementById("xMax").value);
+            const yMax = parseFloat(document.getElementById("yMax").value);
+            const xLabel = document.getElementById("xLabel").value;
+            const yLabel = document.getElementById("yLabel").value;
+            const xStep = parseFloat(document.getElementById("xStep").value);
+            const yStep = parseFloat(document.getElementById("yStep").value);
+            
+            const rootStyle = getComputedStyle(document.documentElement);
+            const pointColor = document.getElementById("pointColor").value || rootStyle.getPropertyValue('--default-point-color').trim();
+            const lineColor = document.getElementById("lineColor").value || rootStyle.getPropertyValue('--default-line-color').trim();
+
+            const graphType = document.getElementById("graphType").value;
+            const calculationResultsDiv = document.getElementById("calculationResults");
+
+            const validationErrors = [];
+            if (isNaN(xMax) || xMax <= 0) validationErrors.push("X Max must be a positive number.");
+            if (isNaN(yMax) || yMax <= 0) validationErrors.push("Y Max must be a positive number.");
+            if (isNaN(xStep) || xStep <= 0) validationErrors.push("X Grid Step must be a positive number.");
+            if (isNaN(yStep) || yStep <= 0) validationErrors.push("Y Grid Step must be a positive number.");
+
+            if (validationErrors.length > 0) {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                window.drawAdvancedGrid(ctx, canvas.width, canvas.height, 10, 10, "X-Axis", "Y-Axis", 1, 1);
+                calculationResultsDiv.innerHTML = `<p class="error">Graph Parameter Errors:</p><ul>${validationErrors.map(e => `<li>${e}</li>`).join('')}</ul>`;
+                return;
+            }
+
+            const { data: parsedData, errors: dataErrors } = window.parseUserData(dataString);
+            let finalData = dataToPlot || parsedData;
+            if (!dataToPlot) {
+                currentSimulatedData = JSON.parse(JSON.stringify(finalData));
+            }
+            
+            window.drawAdvancedGrid(ctx, canvas.width, canvas.height, xMax, yMax, xLabel, yLabel, xStep, yStep);
+            window.plotGraphData(ctx, finalData, pointColor, lineColor, xMax, yMax);
+
+            const { results: calcResults, errors: calcErrors } = window.calculateGraphMetrics(parsedData, graphType);
+            
+            let htmlOutput = '';
+            if (dataErrors.length > 0) { htmlOutput += `<p class="error">Data Input Errors:</p><ul>${dataErrors.map(e => `<li>${e}</li>`).join('')}</ul>`; }
+            if (calcErrors.length > 0) { htmlOutput += `<p class="error">Calculation Errors:</p><ul>${calcErrors.map(e => `<li>${e}</li>`).join('')}</ul>`; }
+            if (calcResults.length > 0) { htmlOutput += calcResults.map(r => `<p>${r}</p>`).join(''); }
+            if (htmlOutput === '') { htmlOutput = '<p>Enter data and select graph type to see calculations.</p>'; }
+            calculationResultsDiv.innerHTML = htmlOutput;
+        };
+
+        window.debouncedRenderGraph = function() {
+            clearTimeout(debouncedRenderTimeout);
+            debouncedRenderTimeout = setTimeout(() => {
+                window.renderGraph(null);
+            }, INPUT_DEBOUNCE_DELAY_MS);
+        };
+
+        window.loadTheme = function() {
+            const savedTheme = localStorage.getItem('theme');
+            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            
+            let isDarkMode;
+            if (savedTheme) {
+                isDarkMode = savedTheme === 'dark';
+            } else {
+                isDarkMode = prefersDark;
+            }
+            window.setTheme(isDarkMode);
+            
+            if (isDarkMode) { window.animateIcon(moonIcon, 'rotate-icon-left'); window.animateIcon(sunIcon, 'rotate-icon-right'); }
+            else { window.animateIcon(sunIcon, 'rotate-icon-left'); window.animateIcon(moonIcon, 'rotate-icon-right'); }
+        };
+        
+        window.toggleSettingsPanel = function() {
+            if (settingsPanel.classList.contains('translate-x-full')) {
+                settingsPanel.classList.remove('translate-x-full');
+                settingsPanel.classList.remove('slide-out');
+                settingsPanel.classList.add('slide-in');
+            } else {
+                settingsPanel.classList.add('slide-out');
+                settingsPanel.classList.remove('slide-in');
+                setTimeout(() => { settingsPanel.classList.add('translate-x-full'); }, 300);
+            }
+        };
+        
+        window.resizeCanvas = function() {
+            isResizing = true;
+            const canvas = document.getElementById('userGraphCanvas');
+            const container = canvas.parentElement;
+            if (container) {
+                const containerWidth = container.clientWidth;
+                const containerHeight = container.clientHeight;
+                canvas.width = containerWidth;
+                canvas.height = containerHeight;
+            }
+            window.renderGraph(currentSimulatedData);
+            isResizing = false;
+        };
+
+        /* --- Local Storage Functions --- */
+
+        const STORAGE_KEY_PIN = 'pin_data';
+        const STORAGE_KEY_GRAPHS = 'saved_graphs';
+
+        window.loadSavedGraphs = function() {
+            const savedGraphs = JSON.parse(localStorage.getItem(STORAGE_KEY_GRAPHS)) || {};
+            savedGraphsList.innerHTML = '';
+            
+            const graphIds = Object.keys(savedGraphs);
+            if (graphIds.length === 0) {
+                savedGraphsList.innerHTML = '<li class="text-sm text-gray-500">No saved graphs found.</li>';
+                return;
+            }
+            
+            graphIds.forEach((graphId) => {
+                const graph = savedGraphs[graphId];
+                const li = document.createElement('li');
+                li.innerHTML = `
+                    <div class="setting-item">
+                        <span class="setting-name">${graph.name}</span>
+                        <span>
+                            <button class="setting-action load-graph-btn" data-doc-id="${graphId}">Load</button>
+                            <button class="setting-action delete-graph-btn" data-doc-id="${graphId}" style="color: #d32f2f;">Delete</button>
+                        </span>
+                    </div>
+                `;
+                savedGraphsList.appendChild(li);
+            });
+        };
+
+        window.saveCurrentGraph = function() {
+            const graphName = graphNameInput.value.trim();
+            if (!graphName) {
+                authMessage.textContent = 'Please enter a name for your graph.';
+                return;
+            }
+            const savedGraphs = JSON.parse(localStorage.getItem(STORAGE_KEY_GRAPHS)) || {};
+            
+            const graphId = Date.now().toString();
+            const graphData = {
+                name: graphName,
+                data: document.getElementById('graphData').value,
+                xMax: document.getElementById('xMax').value,
+                yMax: document.getElementById('yMax').value,
+                xLabel: document.getElementById('xLabel').value,
+                yLabel: document.getElementById('yLabel').value,
+                xStep: document.getElementById('xStep').value,
+                yStep: document.getElementById('yStep').value,
+                pointColor: document.getElementById('pointColor').value,
+                lineColor: document.getElementById('lineColor').value,
+                simMagnitude: document.getElementById('simMagnitude').value,
+                graphType: document.getElementById('graphType').value,
+            };
+            
+            savedGraphs[graphId] = graphData;
+            localStorage.setItem(STORAGE_KEY_GRAPHS, JSON.stringify(savedGraphs));
+            
+            authMessage.textContent = `Graph "${graphName}" saved successfully!`;
+            graphNameInput.value = '';
+            window.loadSavedGraphs();
+        };
+        
+        window.loadGraph = function(graphId) {
+            const savedGraphs = JSON.parse(localStorage.getItem(STORAGE_KEY_GRAPHS)) || {};
+            const data = savedGraphs[graphId];
+            if (data) {
+                document.getElementById('graphData').value = data.data;
+                document.getElementById('xMax').value = data.xMax;
+                document.getElementById('yMax').value = data.yMax;
+                document.getElementById('xLabel').value = data.xLabel;
+                document.getElementById('yLabel').value = data.yLabel;
+                document.getElementById('xStep').value = data.xStep;
+                document.getElementById('yStep').value = data.yStep;
+                document.getElementById('pointColor').value = data.pointColor;
+                document.getElementById('lineColor').value = data.lineColor;
+                document.getElementById('simMagnitude').value = data.simMagnitude;
+                document.getElementById('graphType').value = data.graphType;
+                window.debouncedRenderGraph();
+                window.toggleSettingsPanel();
+                authMessage.textContent = `Graph "${data.name}" loaded successfully!`;
+            } else {
+                authMessage.textContent = "Graph not found.";
+            }
+        };
+
+        window.deleteGraph = function(graphId) {
+            const savedGraphs = JSON.parse(localStorage.getItem(STORAGE_KEY_GRAPHS)) || {};
+            if (savedGraphs[graphId]) {
+                delete savedGraphs[graphId];
+                localStorage.setItem(STORAGE_KEY_GRAPHS, JSON.stringify(savedGraphs));
+                authMessage.textContent = `Graph deleted successfully.`;
+                window.loadSavedGraphs();
+            } else {
+                authMessage.textContent = "Graph not found.";
+            }
+        };
+
+        /* --- Auth Functions (Now Local Storage based) --- */
+        
+        window.handlePinLogin = function(event) {
+            event.preventDefault();
+            const pin = pinInput.value.trim();
+            authMessage.textContent = '';
+            
+            if (pin.length !== 4 || isNaN(pin)) {
+                authMessage.textContent = 'Please enter a valid 4-digit PIN.';
+                return;
+            }
+            
+            const savedPin = localStorage.getItem(STORAGE_KEY_PIN);
+            if (savedPin && savedPin === pin) {
+                currentPin = pin;
+                window.showCalculatorPage();
+            } else {
+                authMessage.textContent = 'Incorrect PIN. Please try again or create a new account.';
+            }
+        };
+
+        window.handleCreateAccount = function(event) {
+            event.preventDefault();
+            const newPin = newPinInput.value.trim();
+
+            if (newPin.length !== 4 || isNaN(newPin)) {
+                authMessage.textContent = 'Please enter a valid 4-digit PIN.';
+                return;
+            }
+            
+            const savedPin = localStorage.getItem(STORAGE_KEY_PIN);
+            if (savedPin) {
+                authMessage.textContent = 'An account already exists on this browser. Please sign in instead.';
+                window.hideCreateAccountModal();
+            } else {
+                localStorage.setItem(STORAGE_KEY_PIN, newPin);
+                currentPin = newPin;
+                authMessage.textContent = 'Account created successfully! You are now logged in.';
+                window.hideCreateAccountModal();
+                window.showCalculatorPage();
+            }
+        };
+
+        window.handleLogout = function() {
+            currentPin = null;
+            authMessage.textContent = 'You have been signed out.';
+            loginPage.style.display = 'block';
+            calculatorPage.style.display = 'none';
+            pinInput.value = '';
+        };
+        
+        window.showCreateAccountModal = function() {
+            const savedPin = localStorage.getItem(STORAGE_KEY_PIN);
+            if (savedPin) {
+                authMessage.textContent = 'An account already exists on this browser. Please sign in.';
+            } else {
+                createAccountModal.style.display = 'flex';
+                newPinInput.value = '';
+                authMessage.textContent = '';
+            }
+        };
+        
+        window.hideCreateAccountModal = function() {
+            createAccountModal.style.display = 'none';
+        };
+
+        window.showCalculatorPage = function() {
+            loginPage.style.display = 'none';
+            calculatorPage.style.display = 'block';
+            pinDisplay.textContent = currentPin;
+            window.resizeCanvas();
+            window.startLiveStream();
+            window.loadSavedGraphs();
+        };
+
+        /* --- Initialization --- */
+        window.startLiveStream = function() {
+            if (liveDataInterval) { clearInterval(liveDataInterval); }
+            window.renderGraph(null);
+            liveDataInterval = setInterval(window.simulateLiveData, LIVE_STREAM_INTERVAL_MS);
+            document.getElementById('liveDot').classList.add('active');
+            document.getElementById('liveStatusText').textContent = 'Live Data Stream Active';
+        };
+
+        window.setupEventListeners = function() {
+            const inputsToWatch = [ 'graphData', 'xMax', 'yMax', 'xLabel', 'yLabel', 'xStep', 'yStep', 'pointColor', 'lineColor', 'simMagnitude', 'graphType' ];
+            inputsToWatch.forEach(id => {
+                const element = document.getElementById(id);
+                if (element) {
+                    element.addEventListener('input', window.debouncedRenderGraph);
+                    if (element.tagName === 'SELECT') { element.addEventListener('change', window.debouncedRenderGraph); }
+                }
+            });
+            
+            window.addEventListener('resize', window.resizeCanvas);
+            
+            themeToggle.addEventListener('click', () => {
+                const isDarkMode = html.classList.contains('dark');
+                window.setTheme(!isDarkMode);
+                localStorage.setItem('theme', isDarkMode ? 'light' : 'dark');
+                if (isDarkMode) { window.animateIcon(moonIcon, 'rotate-icon-left'); window.animateIcon(sunIcon, 'rotate-icon-right'); }
+                else { window.animateIcon(sunIcon, 'rotate-icon-left'); window.animateIcon(moonIcon, 'rotate-icon-right'); }
+                window.renderGraph(currentSimulatedData);
+            });
+            
+            settingsButton.addEventListener('click', () => {
+                window.toggleSettingsPanel();
+                if (settingsPanel.classList.contains('translate-x-full')) {
+                    window.loadSavedGraphs();
+                }
+            });
+            closeSettingsButton.addEventListener('click', () => { window.toggleSettingsPanel(); });
+
+            pinLoginForm.addEventListener('submit', window.handlePinLogin);
+            authToggleButton.addEventListener('click', window.showCreateAccountModal);
+            logoutButton.addEventListener('click', window.handleLogout);
+            
+            confirmPinsBtn.addEventListener('click', window.handleCreateAccount);
+            cancelPinsBtn.addEventListener('click', window.hideCreateAccountModal);
+            
+            saveGraphBtn.addEventListener('click', window.saveCurrentGraph);
+            savedGraphsList.addEventListener('click', (e) => {
+                if (e.target.classList.contains('load-graph-btn')) {
+                    window.loadGraph(e.target.dataset.docId);
+                } else if (e.target.classList.contains('delete-graph-btn')) {
+                    window.deleteGraph(e.target.dataset.docId);
+                }
+            });
+        };
+        
+        window.onload = function() {
+            window.setupEventListeners();
+            window.loadTheme();
+            
+            // Check if a PIN exists in local storage to determine the initial view
+            const savedPin = localStorage.getItem(STORAGE_KEY_PIN);
+            if (savedPin) {
+                // If a PIN exists, show the login page
+                loginPage.style.display = 'block';
+                calculatorPage.style.display = 'none';
+                authMessage.textContent = 'Please enter your 4-digit PIN to access your saved graphs.';
+            } else {
+                // No PIN exists, prompt to create an account
+                loginPage.style.display = 'block';
+                calculatorPage.style.display = 'none';
+                authMessage.textContent = 'Welcome! Please create a new 4-digit PIN to get started.';
+                authToggleButton.click(); // Automatically open the create account modal
+            }
+        };
+    </script>
+</body>
+</html>
